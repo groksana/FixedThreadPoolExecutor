@@ -39,7 +39,7 @@ public class FixedThreadPoolExecutor implements ExecutorService {
 
     @Override
     public boolean isShutdown() {
-        return false;
+        return !isActive;
     }
 
     @Override
@@ -62,17 +62,39 @@ public class FixedThreadPoolExecutor implements ExecutorService {
 
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
-        return null;
+        if (task == null) throw new NullPointerException();
+        RunnableFuture<T> futureTask = new FutureTask<>(task, result);
+        execute(futureTask);
+        return futureTask;
     }
 
     @Override
     public Future<?> submit(Runnable task) {
-        return null;
+        if (task == null) throw new NullPointerException();
+        RunnableFuture<Void> futureTask = new FutureTask<Void>(task, null);
+        execute(futureTask);
+        return futureTask;
     }
 
     @Override
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        return null;
+        List<Future<T>> futureList = new ArrayList<>();
+
+        for (Callable<T> task : tasks) {
+            RunnableFuture<T> future = new FutureTask<T>(task);
+            futureList.add(future);
+            execute(future);
+        }
+
+        for (int i = 0; i < futureList.size(); i++) {
+            Future<T> future = futureList.get(i);
+            try {
+                future.get();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+        return futureList;
     }
 
     @Override
